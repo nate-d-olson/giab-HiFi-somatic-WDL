@@ -20,13 +20,13 @@ workflow hifisomatic {
     Boolean skip_align = false
     File ref_fasta
     File ref_fasta_dict
-    File ref_gff
+    # File ref_gff ## Excluding for multiple refs version
     # FASTA index refers to the standard faidx. For mmi index use ref_fasta
     File ref_fasta_index
     # Can also define FASTA MMI for pbmm2
     File? ref_fasta_mmi
     File ref_bed
-    File cnvkit_refflat
+    # File cnvkit_refflat ## Excluding for multiple refs version
     Int cnvkit_threads = 8
     Int pbmm2_threads = 24
     Int samtools_threads = 8
@@ -50,15 +50,15 @@ workflow hifisomatic {
     # SV-related 
     File trf_bed
     Int sv_threads = 8
-    File control_vcf
-    File control_vcf_index
+    # File control_vcf  ## Excluding for multiple refs version
+    # File control_vcf_index  ## Excluding for multiple refs version
     # Minimum reads support for Severus
     Int severus_min_reads = 3
     # AnnotSV cache can be downloaded using install script from https://lbgi.fr/AnnotSV/.
     # After the database is downloaded, zip the folder and provide the path to the zip file.
     # E.g. by default this is $ANNOTSV/share/AnnotSV
     # If this is not specified in input, AnnotSV will not be run
-    File? annotsv_cache
+    # File? annotsv_cache  ## Excluding for multiple refs version
     Int annotsv_threads = 8
     # Default number of threads for misc tasks (4GB per thread assigned for almost all steps)
     Int def_threads = 2
@@ -70,7 +70,7 @@ workflow hifisomatic {
     Boolean calculate_DMR = true
     # Annotate VCF. If vep_cache is not specified in JSON, VEP will not be run
     # VEP cache can be downloaded from https://ftp.ensembl.org/pub/release-110/variation/indexed_vep_cache/homo_sapiens_refseq_vep_110_GRCh38.tar.gz
-    File? vep_cache
+    # File? vep_cache  ## Excluding for multiple refs version
     Int vep_threads = 8
     # Annotate germline variants?
     Boolean annotate_germline = false
@@ -79,7 +79,7 @@ workflow hifisomatic {
     # Sometimes when there's too many mutations HiPhase will run OOM. Use LongPhase
     Boolean uselongphase = false
     # Amber, Cobalt and Purple
-    File? ensembl_data_dir_tarball
+    # File? ensembl_data_dir_tarball  ## Excluding for multiple refs version
     Int hmftools_threads = 8
   }
 
@@ -262,25 +262,26 @@ workflow hifisomatic {
               }
             }
             
-            # Annotate somatic VCF
-            if(size(select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf])) > 0 && defined(vep_cache)){
-              call annotation.vep_annotate as annotateSomatic {
-                input:
-                  input_vcf = select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf]),
-                  vep_cache = select_first([vep_cache]),
-                  ref_fasta = ref_fasta,
-                  ref_fasta_index = ref_fasta_index,
-                  pname = patient,
-                  threads = vep_threads
-              }
+            ## Excluding for multiple refs version
+            # Annotate somatic VCF 
+            # if(size(select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf])) > 0 && defined(vep_cache)){
+            #   call annotation.vep_annotate as annotateSomatic {
+            #     input:
+            #       input_vcf = select_first([phaseTumorBam_longphase.longphase_somatic_small_variants_vcf, phaseTumorBam.hiphase_somatic_small_variants_vcf]),
+            #       vep_cache = select_first([vep_cache]),
+            #       ref_fasta = ref_fasta,
+            #       ref_fasta_index = ref_fasta_index,
+            #       pname = patient,
+            #       threads = vep_threads
+            #   }
 
-              call prioritization.prioritize_small_variants as prioritizeSomatic {
-                input:
-                  vep_annotated_vcf = annotateSomatic.vep_annotated_vcf,
-                  threads = samtools_threads,
-                  pname = patient
-              }
-            }
+            #   call prioritization.prioritize_small_variants as prioritizeSomatic {
+            #     input:
+            #       vep_annotated_vcf = annotateSomatic.vep_annotated_vcf,
+            #       threads = samtools_threads,
+            #       pname = patient
+            #   }
+            # }
 
           }
           if(size(select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf])) > 0) {
@@ -431,30 +432,31 @@ workflow hifisomatic {
         threads = samtools_threads
     }
 
-    call common.svpack_filter_annotated as filter_Severus {
-      input:
-        sv_vcf = tabixSeverus.output_vcf,
-        population_vcfs = [control_vcf],
-        population_vcf_indices = [control_vcf_index],
-        gff = ref_gff
-    }
+    ## Excluding for multiple refs version
+    # call common.svpack_filter_annotated as filter_Severus {
+    #   input:
+    #     sv_vcf = tabixSeverus.output_vcf,
+    #     population_vcfs = [control_vcf],
+    #     population_vcf_indices = [control_vcf_index],
+    #     gff = ref_gff
+    # }
 
-    if (defined(annotsv_cache)) {
-      call annotation.annotsv as annotateSeverus {
-          input:
-            sv_vcf = filter_Severus.output_vcf,
-            sv_vcf_index = filter_Severus.output_vcf_index,
-            annotsv_cache = select_first([annotsv_cache]),
-            pname = patient,
-            threads = annotsv_threads
-      }
+    # if (defined(annotsv_cache)) {
+    #   call annotation.annotsv as annotateSeverus {
+    #       input:
+    #         sv_vcf = filter_Severus.output_vcf,
+    #         sv_vcf_index = filter_Severus.output_vcf_index,
+    #         annotsv_cache = select_first([annotsv_cache]),
+    #         pname = patient,
+    #         threads = annotsv_threads
+    #   }
 
-      call prioritization.prioritize_sv_intogen as prioritize_Severus {
-        input:
-          annotSV_tsv = annotateSeverus.annotsv_annotated_tsv,
-          threads = samtools_threads
-      }
-    }
+    #   call prioritization.prioritize_sv_intogen as prioritize_Severus {
+    #     input:
+    #       annotSV_tsv = annotateSeverus.annotsv_annotated_tsv,
+    #       threads = samtools_threads
+    #   }
+    # }
 
     call cnvkit.cnvkit_tumor {
       input:
@@ -469,113 +471,114 @@ workflow hifisomatic {
         threads = cnvkit_threads
     }
 
-    if(defined(ensembl_data_dir_tarball)){
-      call clonality.Amber {
-        input:
-          referenceName = patient + ".normal",
-          referenceBam = MergeNormalBams.merged_aligned_bam,
-          referenceBamIndex = MergeNormalBams.merged_aligned_bam_index,
-          tumorName = patient + ".tumor",
-          tumorBam = MergeTumorBams.merged_aligned_bam,
-          tumorBamIndex = MergeTumorBams.merged_aligned_bam_index,
-          ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
-          referenceFasta = ref_fasta,
-          referenceFastaFai = ref_fasta_index,
-          referenceFastaDict = ref_fasta_dict,
-          threads = hmftools_threads
-      }
+    ## Excluding for multiple refs version
+    # if(defined(ensembl_data_dir_tarball)){
+    #   call clonality.Amber {
+    #     input:
+    #       referenceName = patient + ".normal",
+    #       referenceBam = MergeNormalBams.merged_aligned_bam,
+    #       referenceBamIndex = MergeNormalBams.merged_aligned_bam_index,
+    #       tumorName = patient + ".tumor",
+    #       tumorBam = MergeTumorBams.merged_aligned_bam,
+    #       tumorBamIndex = MergeTumorBams.merged_aligned_bam_index,
+    #       ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
+    #       referenceFasta = ref_fasta,
+    #       referenceFastaFai = ref_fasta_index,
+    #       referenceFastaDict = ref_fasta_dict,
+    #       threads = hmftools_threads
+    #   }
 
-      call clonality.Cobalt {
-        input:
-          referenceName = patient + ".normal",
-          referenceBam = MergeNormalBams.merged_aligned_bam,
-          referenceBamIndex = MergeNormalBams.merged_aligned_bam_index,
-          tumorName = patient + ".tumor",
-          tumorBam = MergeTumorBams.merged_aligned_bam,
-          tumorBamIndex = MergeTumorBams.merged_aligned_bam_index,
-          referenceFasta = ref_fasta,
-          referenceFastaFai = ref_fasta_index,
-          referenceFastaDict = ref_fasta_dict,
-          ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
-          threads = hmftools_threads
-      }
+    #   call clonality.Cobalt {
+    #     input:
+    #       referenceName = patient + ".normal",
+    #       referenceBam = MergeNormalBams.merged_aligned_bam,
+    #       referenceBamIndex = MergeNormalBams.merged_aligned_bam_index,
+    #       tumorName = patient + ".tumor",
+    #       tumorBam = MergeTumorBams.merged_aligned_bam,
+    #       tumorBamIndex = MergeTumorBams.merged_aligned_bam_index,
+    #       referenceFasta = ref_fasta,
+    #       referenceFastaFai = ref_fasta_index,
+    #       referenceFastaDict = ref_fasta_dict,
+    #       ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
+    #       threads = hmftools_threads
+    #   }
 
-      # DeepSomatic doesn't annotate germline count, so don't supply
-      # somatic VCF if using deepsomatic
-      if (use_deepsomatic){
-        call clonality.Purple as purple_nosomatic {
-          input:
-            referenceName = patient + ".normal",
-            tumorName = patient + ".tumor",
-            outputDir = "./purple",
-            amberOutput = Amber.outputs,
-            cobaltOutput = Cobalt.outputs,
-            referenceFasta = ref_fasta,
-            referenceFastaFai = ref_fasta_index,
-            referenceFastaDict = ref_fasta_dict,
-            ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
-            threads = hmftools_threads
-        }
-      }
-      if (!use_deepsomatic){
-        call clonality.Purple as purple_withsomatic {
-          input:
-            referenceName = patient + ".normal",
-            tumorName = patient + ".tumor",
-            outputDir = "./purple",
-            amberOutput = Amber.outputs,
-            cobaltOutput = Cobalt.outputs,
-            somaticVcf = select_first([gather_ClairS.output_vcf]),
-            referenceFasta = ref_fasta,
-            referenceFastaFai = ref_fasta_index,
-            referenceFastaDict = ref_fasta_dict,
-            ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
-            threads = hmftools_threads
-        }
-      }
+    #   # DeepSomatic doesn't annotate germline count, so don't supply
+    #   # somatic VCF if using deepsomatic
+    #   if (use_deepsomatic){
+    #     call clonality.Purple as purple_nosomatic {
+    #       input:
+    #         referenceName = patient + ".normal",
+    #         tumorName = patient + ".tumor",
+    #         outputDir = "./purple",
+    #         amberOutput = Amber.outputs,
+    #         cobaltOutput = Cobalt.outputs,
+    #         referenceFasta = ref_fasta,
+    #         referenceFastaFai = ref_fasta_index,
+    #         referenceFastaDict = ref_fasta_dict,
+    #         ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
+    #         threads = hmftools_threads
+    #     }
+    #   }
+    #   if (!use_deepsomatic){
+    #     call clonality.Purple as purple_withsomatic {
+    #       input:
+    #         referenceName = patient + ".normal",
+    #         tumorName = patient + ".tumor",
+    #         outputDir = "./purple",
+    #         amberOutput = Amber.outputs,
+    #         cobaltOutput = Cobalt.outputs,
+    #         somaticVcf = select_first([gather_ClairS.output_vcf]),
+    #         referenceFasta = ref_fasta,
+    #         referenceFastaFai = ref_fasta_index,
+    #         referenceFastaDict = ref_fasta_dict,
+    #         ensembl_data_dir_tarball = select_first([ensembl_data_dir_tarball]),
+    #         threads = hmftools_threads
+    #     }
+    #   }
 
-      # Recall CNVKit major and minor CN
-      if (call_small_variants && size(select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf])) > 0 && defined(ensembl_data_dir_tarball)) {
-        call cnvkit.merge_germline as mergeGermline {
-          input:
-            tumor_germline_vcf = select_first([run_deepsomatic.clair3_tumor_vcf, gather_ClairS_germline.output_tumor_germline_vcf]),
-            tumor_germline_vcf_tbi = select_first([run_deepsomatic.clair3_tumor_vcf_tbi, gather_ClairS_germline.output_tumor_germline_vcf_index]),
-            normal_germline_vcf = select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf]),
-            normal_germline_vcf_tbi = select_first([run_deepsomatic.clair3_normal_vcf_tbi, gather_ClairS_germline.output_normal_germline_vcf_index]),
-            pname = patient,
-            threads = samtools_threads
-        }
+    #   # Recall CNVKit major and minor CN
+    #   if (call_small_variants && size(select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf])) > 0 && defined(ensembl_data_dir_tarball)) {
+    #     call cnvkit.merge_germline as mergeGermline {
+    #       input:
+    #         tumor_germline_vcf = select_first([run_deepsomatic.clair3_tumor_vcf, gather_ClairS_germline.output_tumor_germline_vcf]),
+    #         tumor_germline_vcf_tbi = select_first([run_deepsomatic.clair3_tumor_vcf_tbi, gather_ClairS_germline.output_tumor_germline_vcf_index]),
+    #         normal_germline_vcf = select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf]),
+    #         normal_germline_vcf_tbi = select_first([run_deepsomatic.clair3_normal_vcf_tbi, gather_ClairS_germline.output_normal_germline_vcf_index]),
+    #         pname = patient,
+    #         threads = samtools_threads
+    #     }
         
-        call cnvkit.cnvkit_recall {
-          input:
-            cnvkit_cns = cnvkit_tumor.cnvkit_output_cns,
-            merged_germline_heterozygous_vcf = mergeGermline.merged_germline_heterozygous_vcf,
-            merged_germline_heterozygous_vcf_tbi = mergeGermline.merged_germline_heterozygous_vcf_tbi,
-            threads = samtools_threads,
-            purity_ploidy = select_first([purple_withsomatic.purity_ploidy, purple_nosomatic.purity_ploidy]),
-            pname = patient
-        }
+    #     call cnvkit.cnvkit_recall {
+    #       input:
+    #         cnvkit_cns = cnvkit_tumor.cnvkit_output_cns,
+    #         merged_germline_heterozygous_vcf = mergeGermline.merged_germline_heterozygous_vcf,
+    #         merged_germline_heterozygous_vcf_tbi = mergeGermline.merged_germline_heterozygous_vcf_tbi,
+    #         threads = samtools_threads,
+    #         purity_ploidy = select_first([purple_withsomatic.purity_ploidy, purple_nosomatic.purity_ploidy]),
+    #         pname = patient
+    #     }
 
-        if(defined(annotsv_cache)) {
-          call prioritization.report_sample {
-            input:
-              annotated_small_variant_tsv = select_first([prioritizeSomatic.vep_annotated_tsv]),
-              intogen_small_var_tsv = select_first([prioritizeSomatic.vep_annotated_tsv_intogenCCG]),
-              sv_intogen_tsv = select_first([prioritize_Severus.annotSV_intogen_tsv]),
-              sv_vcf = filter_Severus.output_vcf,
-              purple_cnv = select_first([purple_withsomatic.purpleCnvSomaticTsv, purple_nosomatic.purpleCnvSomaticTsv]),
-              purple_pur_ploidy = select_first([purple_withsomatic.purplePurityTsv, purple_nosomatic.purplePurityTsv]),
-              mosdepth_tumor = MosdepthTumor.output_summary,
-              mosdepth_normal = MosdepthNormal.output_summary,
-              mutsig_tsv = select_first([mutationalpattern.mutsig_tsv]),
-              mut_reconstructed_sigs = select_first([mutationalpattern.recon_sig]),
-              dmr_intogen_tsv = select_first([prioritize_dmr_intogen.promoter_file]),
-              chord_file = select_first([chord_hrd.chord_prediction]),
-              pname = patient
-          }
-      }
-      }
-    }
+    #     if(defined(annotsv_cache)) {
+    #       call prioritization.report_sample {
+    #         input:
+    #           annotated_small_variant_tsv = select_first([prioritizeSomatic.vep_annotated_tsv]),
+    #           intogen_small_var_tsv = select_first([prioritizeSomatic.vep_annotated_tsv_intogenCCG]),
+    #           sv_intogen_tsv = select_first([prioritize_Severus.annotSV_intogen_tsv]),
+    #           sv_vcf = filter_Severus.output_vcf,
+    #           purple_cnv = select_first([purple_withsomatic.purpleCnvSomaticTsv, purple_nosomatic.purpleCnvSomaticTsv]),
+    #           purple_pur_ploidy = select_first([purple_withsomatic.purplePurityTsv, purple_nosomatic.purplePurityTsv]),
+    #           mosdepth_tumor = MosdepthTumor.output_summary,
+    #           mosdepth_normal = MosdepthNormal.output_summary,
+    #           mutsig_tsv = select_first([mutationalpattern.mutsig_tsv]),
+    #           mut_reconstructed_sigs = select_first([mutationalpattern.recon_sig]),
+    #           dmr_intogen_tsv = select_first([prioritize_dmr_intogen.promoter_file]),
+    #           chord_file = select_first([chord_hrd.chord_prediction]),
+    #           pname = patient
+    #       }
+    #   }
+    #   }
+    # }
   }
 
   output {
@@ -608,12 +611,12 @@ workflow hifisomatic {
     Array[Array[File]+?] DMR_annotated = annotate_DMR.output_DMR_annotated
     Array[Array[File]+?] DMR_annotated_CCG = prioritize_dmr_intogen.DMR_nCGFilter_CCG
     Array[File] Severus_vcf = tabixSeverus.output_vcf
-    Array[File] Severus_filtered_vcf = filter_Severus.output_vcf
-    Array[File] Severus_filtered_vcf_index = filter_Severus.output_vcf_index
+    # Array[File] Severus_filtered_vcf = filter_Severus.output_vcf ## Excluding for multiple refs version
+    # Array[File] Severus_filtered_vcf_index = filter_Severus.output_vcf_index ## Excluding for multiple refs version
     Array[Array[File]+] cnvkit_output = cnvkit_tumor.cnvkit_output
-    Array[File?] cnvkit_cns_with_major_minor_CN = cnvkit_recall.cnvkit_cns_with_major_minor_CN
-    Array[File?] AnnotatedSeverusSV = annotateSeverus.annotsv_annotated_tsv
-    Array[File?] AnnotatedSeverusSV_intogen = prioritize_Severus.annotSV_intogen_tsv
+    # Array[File?] cnvkit_cns_with_major_minor_CN = cnvkit_recall.cnvkit_cns_with_major_minor_CN ## Excluding for multiple refs version
+    # Array[File?] AnnotatedSeverusSV = annotateSeverus.annotsv_annotated_tsv ## Excluding for multiple refs version
+    # Array[File?] AnnotatedSeverusSV_intogen = prioritize_Severus.annotSV_intogen_tsv ## Excluding for multiple refs version
     Array[File] mosdepth_tumor_bed = MosdepthTumor.output_bed
     Array[File] mosdepth_tumor_bed_index = MosdepthTumor.output_bed_index
     Array[File] mosdepth_tumor_summary = MosdepthTumor.output_summary
@@ -626,10 +629,10 @@ workflow hifisomatic {
     Array[File] per_alignment_normal_stats = bamstatsNormal.seqkit_alignment_stats
     Array[File] aligned_RL_summary_tumor = summarize_tumor_RL.output_summary
     Array[File] aligned_RL_summary_normal = summarize_normal_RL.output_summary
-    Array[Array[File]+?] Amber_outputs = Amber.outputs
-    Array[Array[File]+?] Cobalt_outputs = Cobalt.outputs
-    Array[Array[File]+?] Purple_outputs = select_first([purple_nosomatic.outputs, purple_withsomatic.outputs])
-    Array[Array[File]+?] Purple_plots = select_first([purple_nosomatic.plots, purple_withsomatic.plots])
-    Array[File?] report = report_sample.summary_report
+    # Array[Array[File]+?] Amber_outputs = Amber.outputs ## Excluding for multiple refs version
+    # Array[Array[File]+?] Cobalt_outputs = Cobalt.outputs ## Excluding for multiple refs version
+    # Array[Array[File]+?] Purple_outputs = select_first([purple_nosomatic.outputs, purple_withsomatic.outputs]) ## Excluding for multiple refs version
+    # Array[Array[File]+?] Purple_plots = select_first([purple_nosomatic.plots, purple_withsomatic.plots]) ## Excluding for multiple refs version
+    # Array[File?] report = report_sample.summary_report
   }
 }
