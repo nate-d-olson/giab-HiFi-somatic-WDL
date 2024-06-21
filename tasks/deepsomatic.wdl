@@ -269,7 +269,7 @@ task call_clair3 {
     runtime {
         docker: "hkubal/clair3@sha256:857af16c759b0893fc757511a17c1efdfe253cbb64dffbcc8eecac0d33a60f60"
         cpu: threads
-        memory: "~{threads * 2} GB"
+        memory: "~{threads * 8} GB"
         disk: file_size + " GB"
         maxRetries: 2
         preemptible: 1
