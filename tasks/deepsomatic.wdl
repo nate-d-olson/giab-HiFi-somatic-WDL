@@ -189,10 +189,10 @@ task gather_deepsomatic {
     ls *.vcf.gz > vcf.list
     ls *.gvcf.gz > gvcf.list
 
-    bcftools concat -a -f vcf.list |\
-        bcftools sort -Oz -o ~{pname + "_deepsomatic.vcf.gz"}
-    bcftools concat -a -f gvcf.list |\
-        bcftools sort -Oz -o ~{pname + "_deepsomatic.g.vcf.gz"}
+    bcftools concat -a -f vcf.list \
+        | bcftools sort --temp-dir tmp -Oz -o ~{pname + "_deepsomatic.vcf.gz"}
+    bcftools concat -a -f gvcf.list \
+        | bcftools sort --temp-dir tmp -Oz -o ~{pname + "_deepsomatic.g.vcf.gz"}
 
     tabix -p vcf ~{pname + "_deepsomatic.vcf.gz"}
     tabix -p vcf ~{pname + "_deepsomatic.g.vcf.gz"}
