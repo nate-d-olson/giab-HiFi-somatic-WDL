@@ -221,13 +221,13 @@ workflow hifisomatic {
           }
 
           # Mutational signature
-          call common.mutationalpattern {
-            input:
-              vcf = select_first([run_deepsomatic.deepsomatic_vcf, gather_ClairS.output_vcf]),
-              pname = patient,
-              max_delta = mutsig_max_delta,
-              threads = samtools_threads
-          }
+          # call common.mutationalpattern {
+          #   input:
+          #     vcf = select_first([run_deepsomatic.deepsomatic_vcf, gather_ClairS.output_vcf]),
+          #     pname = patient,
+          #     max_delta = mutsig_max_delta,
+          #     threads = samtools_threads
+          # }
 
           # Phase only if size of VCF is not zero (no variants)
           if(size(select_first([run_deepsomatic.clair3_tumor_vcf, gather_ClairS_germline.output_tumor_germline_vcf])) > 0){
@@ -298,17 +298,17 @@ workflow hifisomatic {
             }
 
           # Annotate germline VCF
-           if(size(phaseNormalBam.hiphase_vcf) > 0 && defined(vep_cache) && annotate_germline){
-              call annotation.vep_annotate as annotateGermline {
-                input:
-                  input_vcf = phaseNormalBam.hiphase_vcf,
-                  vep_cache = select_first([vep_cache]),
-                  ref_fasta = ref_fasta,
-                  ref_fasta_index = ref_fasta_index,
-                  pname = patient,
-                  threads = vep_threads
-              }
-            }
+          # if(size(phaseNormalBam.hiphase_vcf) > 0 && defined(vep_cache) && annotate_germline){
+          #    call annotation.vep_annotate as annotateGermline {
+          #      input:
+          #        input_vcf = phaseNormalBam.hiphase_vcf,
+          #        vep_cache = select_first([vep_cache]),
+          #        ref_fasta = ref_fasta,
+          #        ref_fasta_index = ref_fasta_index,
+          #        pname = patient,
+          #        threads = vep_threads
+          #    }
+          #  }
           }
     }
     # Calculate alignment statistics for tumor
@@ -403,12 +403,12 @@ workflow hifisomatic {
       }
 
       # Chord HRD prediction
-      call annotation.chord_hrd {
-        input:
-          small_variant_vcf = select_first([run_deepsomatic.deepsomatic_vcf, gather_ClairS.output_vcf]),
-          sv_vcf = select_first([phased_severus.output_vcf]),
-          pname = patient
-      }
+      # call annotation.chord_hrd {
+      #   input:
+      #     small_variant_vcf = select_first([run_deepsomatic.deepsomatic_vcf, gather_ClairS.output_vcf]),
+      #     sv_vcf = select_first([phased_severus.output_vcf]),
+      #     pname = patient
+      # }
     }
 
     if(!call_small_variants){
@@ -458,18 +458,18 @@ workflow hifisomatic {
     #   }
     # }
 
-    call cnvkit.cnvkit_tumor {
-      input:
-        tumor_bam = MergeTumorBams.merged_aligned_bam,
-        tumor_bam_index = MergeTumorBams.merged_aligned_bam_index,
-        normal_bam = MergeNormalBams.merged_aligned_bam,
-        normal_bam_index = MergeNormalBams.merged_aligned_bam_index,
-        ref_fasta = ref_fasta,
-        ref_fasta_index = ref_fasta_index,
-        refFlat = cnvkit_refflat,
-        pname = patient,
-        threads = cnvkit_threads
-    }
+    #call cnvkit.cnvkit_tumor {
+    #  input:
+    #    tumor_bam = MergeTumorBams.merged_aligned_bam,
+    #    tumor_bam_index = MergeTumorBams.merged_aligned_bam_index,
+    #    normal_bam = MergeNormalBams.merged_aligned_bam,
+    #    normal_bam_index = MergeNormalBams.merged_aligned_bam_index,
+    #    ref_fasta = ref_fasta,
+    #    ref_fasta_index = ref_fasta_index,
+    #    refFlat = cnvkit_refflat,
+    #    pname = patient,
+    #    threads = cnvkit_threads
+    #}
 
     ## Excluding for multiple refs version
     # if(defined(ensembl_data_dir_tarball)){
@@ -583,15 +583,15 @@ workflow hifisomatic {
 
   output {
     Array[File?] small_variant_vcf = phaseTumorBam.hiphase_somatic_small_variants_vcf
-    Array[File?] small_variant_vcf_annotated = annotateSomatic.vep_annotated_vcf
-    Array[File?] small_variant_tsv_annotated = prioritizeSomatic.vep_annotated_tsv
-    Array[File?] small_variant_tsv_CCG = prioritizeSomatic.vep_annotated_tsv_intogenCCG
-    Array[Array[File]+?] mutsig_SNV = mutationalpattern.mutsig_output
-    Array[File?] mutsig_SNV_profile = mutationalpattern.mut_profile
-    Array[File?] chord_hrd_prediction = chord_hrd.chord_prediction
+    # Array[File?] small_variant_vcf_annotated = annotateSomatic.vep_annotated_vcf
+    # Array[File?] small_variant_tsv_annotated = prioritizeSomatic.vep_annotated_tsv
+    # Array[File?] small_variant_tsv_CCG = prioritizeSomatic.vep_annotated_tsv_intogenCCG
+    # Array[Array[File]+?] mutsig_SNV = mutationalpattern.mutsig_output
+    # Array[File?] mutsig_SNV_profile = mutationalpattern.mut_profile
+    # Array[File?] chord_hrd_prediction = chord_hrd.chord_prediction
     Array[File?] tumor_germline_small_variant_vcf = select_first([run_deepsomatic.clair3_tumor_vcf, gather_ClairS_germline.output_tumor_germline_vcf])
     Array[File?] normal_germline_small_variant_vcf = select_first([run_deepsomatic.clair3_normal_vcf, gather_ClairS_germline.output_normal_germline_vcf])
-    Array[File?] normal_germline_small_variant_vcf_annotated = annotateGermline.vep_annotated_vcf
+    # Array[File?] normal_germline_small_variant_vcf_annotated = annotateGermline.vep_annotated_vcf
     Array[File] tumor_bams = MergeTumorBams.merged_aligned_bam
     Array[File] tumor_bams_bai = MergeTumorBams.merged_aligned_bam_index
     Array[File?] tumor_bams_hiphase = phaseTumorBam.hiphase_bam
@@ -613,7 +613,7 @@ workflow hifisomatic {
     Array[File] Severus_vcf = tabixSeverus.output_vcf
     # Array[File] Severus_filtered_vcf = filter_Severus.output_vcf ## Excluding for multiple refs version
     # Array[File] Severus_filtered_vcf_index = filter_Severus.output_vcf_index ## Excluding for multiple refs version
-    Array[Array[File]+] cnvkit_output = cnvkit_tumor.cnvkit_output
+    # Array[Array[File]+] cnvkit_output = cnvkit_tumor.cnvkit_output
     # Array[File?] cnvkit_cns_with_major_minor_CN = cnvkit_recall.cnvkit_cns_with_major_minor_CN ## Excluding for multiple refs version
     # Array[File?] AnnotatedSeverusSV = annotateSeverus.annotsv_annotated_tsv ## Excluding for multiple refs version
     # Array[File?] AnnotatedSeverusSV_intogen = prioritize_Severus.annotSV_intogen_tsv ## Excluding for multiple refs version
